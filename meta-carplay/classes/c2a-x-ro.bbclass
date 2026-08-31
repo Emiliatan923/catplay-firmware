@@ -12,7 +12,7 @@ PACKAGE_EXCLUDE:append = " kernel-image-*"
 
 # Reduce garbage
 IMAGE_LINGUAS = ""
-IMAGE_FEATURES = "read-only-rootfs debug-tweaks empty-root-password allow-empty-password allow-root-login"
+IMAGE_FEATURES = "read-only-rootfs empty-root-password allow-empty-password allow-root-login post-install-logging"
 
 MACHINE_FIRMWARE ??= "" 
 

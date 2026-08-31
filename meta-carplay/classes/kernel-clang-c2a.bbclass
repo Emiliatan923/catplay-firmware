@@ -6,6 +6,15 @@ C2A_KERNEL_CLANG_LLD ?= "${C2A_KERNEL_CLANG}"
 # Broken relocations
 C2A_KERNEL_CLANG_LLD:mipsarch = "0"
 
+# Wrynose selects the recipe toolchain through a deferred class inherit.
+# Assign TOOLCHAIN declaratively so that selection sees the requested compiler;
+# changing it from anonymous Python happens too late and leaves TCOVERRIDE and
+# the inherited toolchain class pointing at GCC.
+TOOLCHAIN = "${@'clang' if d.getVar('C2A_KERNEL_CLANG') == '1' else 'gcc'}"
+BUILD_OPTIMIZATION:toolchain-clang = ""
+
+KERNEL_LD:toolchain-clang = "${CCACHE}${TARGET_PREFIX}${@'ld.lld' if d.getVar('C2A_KERNEL_CLANG_LLD') == '1' else 'ld.bfd'}"
+
 python () {
     clang = (d.getVar("C2A_KERNEL_CLANG") or "").strip()
     lld = (d.getVar("C2A_KERNEL_CLANG_LLD") or "").strip()
@@ -14,17 +23,6 @@ python () {
         bb.fatal("C2A_KERNEL_CLANG must be '0' or '1'")
     if lld not in ("0", "1"):
         bb.fatal("C2A_KERNEL_CLANG_LLD must be '0' or '1'")
-
-    if clang == "1":
-        d.setVar("TOOLCHAIN:forcevariable", "clang")
-        d.setVar("BUILD_OPTIMIZATION:forcevariable", "")
-    else:
-        d.setVar("TOOLCHAIN:forcevariable", "gcc")
-
-    if lld == "1":
-        d.setVar("KERNEL_LD:toolchain-clang", "${CCACHE}${TARGET_PREFIX}ld.lld")
-    else:
-        d.setVar("KERNEL_LD:toolchain-clang", "${CCACHE}${TARGET_PREFIX}ld.bfd")
 }
 
 DEPENDS:append:toolchain-clang = " clang-cross-${TARGET_ARCH}"
