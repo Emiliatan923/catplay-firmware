@@ -16,6 +16,18 @@ IMAGE_FEATURES = "read-only-rootfs debug-tweaks empty-root-password allow-empty-
 
 MACHINE_FIRMWARE ??= "" 
 
+# Mountpoints that must exist in the immutable core filesystem.  Runtime
+# helpers such as tmpfiles cannot create these on a read-only EROFS root.
+C2A_CORE_MOUNTPOINTS ?= "/persist"
+
+ROOTFS_POSTPROCESS_COMMAND += "create_c2a_core_mountpoints; "
+
+create_c2a_core_mountpoints() {
+	for mountpoint in ${C2A_CORE_MOUNTPOINTS}; do
+		install -d -m 0755 "${IMAGE_ROOTFS}${mountpoint}"
+	done
+}
+
 PACKAGE_INSTALL:append = " \
     packagegroup-core-c2a \
     kernel-modules \
