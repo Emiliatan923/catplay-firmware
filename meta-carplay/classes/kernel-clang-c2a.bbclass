@@ -26,6 +26,9 @@ python () {
 }
 
 DEPENDS:append:toolchain-clang = " clang-cross-${TARGET_ARCH}"
+# Clang does not support GCC's -mno-thumb-interwork; drop it so ARMv5
+# kernels using a Thumb-capable tune can pass the compiler checks in Kconfig.
+TARGET_CC_KERNEL_ARCH:remove:toolchain-clang = "-mno-thumb-interwork"
 KERNEL_CC:toolchain-clang = "${CCACHE}${TARGET_PREFIX}clang ${HOST_CC_KERNEL_ARCH} ${DEBUG_PREFIX_MAP} -fno-integrated-as -fdebug-prefix-map=${STAGING_KERNEL_DIR}=${KERNEL_SRC_PATH}"
 
 KERNEL_AR:toolchain-clang = "${CCACHE}${TARGET_PREFIX}llvm-ar"
