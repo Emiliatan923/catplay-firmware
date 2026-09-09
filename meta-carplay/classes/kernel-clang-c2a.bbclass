@@ -1,5 +1,9 @@
 inherit ccache
 
+# Config merging compiles host tools before do_configure stages DEPENDS.
+# Supply ccache to this early task whenever the recipe enables it.
+do_kernel_configme[depends] += "${@bb.utils.contains('DEPENDS', 'ccache-native', 'ccache-native:do_populate_sysroot', '', d)}"
+
 C2A_KERNEL_CLANG ?= "1"
 C2A_KERNEL_CLANG_LLD ?= "${C2A_KERNEL_CLANG}"
 
