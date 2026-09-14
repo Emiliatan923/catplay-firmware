@@ -647,7 +647,7 @@ class SquashfsPatcher:
             original_path.write_bytes(content)
 
             listing = self._run(
-                [self._unsquashfs, "-lln", "-full-precision", "-UTC", str(original_path)]
+                [self._unsquashfs, "-lln", "-UTC", str(original_path)]
             ).decode(errors="replace")
             metadata = [
                 line for line in listing.splitlines() if self._METADATA_LINE.match(line)
@@ -737,7 +737,6 @@ class SquashfsPatcher:
                 [
                     self._unsquashfs,
                     "-lln",
-                    "-full-precision",
                     "-UTC",
                     str(patched_path),
                     "dev/console",
