@@ -1,0 +1,12 @@
+# Keep the CatPlay AP interface under its kernel-assigned name.
+#
+# udev renames new netdevs by MAC within ~20 ms (73-usb-net-by-mac.link,
+# NamePolicy=mac), which would turn `ap0` into `wlx<mac>` out from under
+# hostapd. The AP interface's MAC is locally-administered and derived from the
+# base interface, so it cannot be matched by MAC without also catching wlan0.
+# Match the kernel-assigned name instead.
+[Match]
+OriginalName=ap0
+
+[Link]
+NamePolicy=kernel

@@ -1,0 +1,35 @@
+[Unit]
+Description=CatPlay AP DHCP/DNS for the iPhone
+Requires=catplay-ap-prepare.service
+After=catplay-ap-prepare.service catplay-hostapd.service
+
+[Service]
+Type=simple
+# Bound to the AP interface and address only, so it cannot disturb the
+# resolver used over the station link. The packaged dnsmasq.service binds
+# 0.0.0.0:53 and loses that race to any stub resolver; this one claims only
+# 192.168.66.1:53.
+#
+# /usr/bin, not /usr/sbin: the dnsmasq recipe installs to ${bindir} while
+# hostapd and iw install to ${sbindir}, so on this image the three do NOT share
+# a directory. Pointing this at /usr/sbin/dnsmasq makes systemd fail the unit
+# with 203/EXEC before dnsmasq ever runs -- the AP then comes up and the iPhone
+# can even associate, but no client ever gets a DHCP lease, and
+# catplay-dnsmasq.service crash-loops in the background (restart counter 906
+# observed) without saying why.
+ExecStart=/usr/bin/dnsmasq \
+    --keep-in-foreground \
+    --interface=ap0 \
+    --bind-interfaces \
+    --except-interface=lo \
+    --dhcp-range=192.168.66.10,192.168.66.200,255.255.255.0,12h \
+    --dhcp-option=option:router,192.168.66.1 \
+    --dhcp-option=option:dns-server,192.168.66.1 \
+    --dhcp-leasefile=/var/lib/catplay/dnsmasq.leases \
+    --dhcp-authoritative \
+    --pid-file=
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

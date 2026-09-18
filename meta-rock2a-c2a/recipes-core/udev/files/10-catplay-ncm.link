@@ -1,0 +1,33 @@
+# Keep the CarPlay NCM data link under its kernel-assigned name.
+#
+# The same hazard 10-catplay-ap0.link documents for ap0, and it is not
+# hypothetical: 73-usb-net-by-mac.link / 99-default.link rename a new netdev by
+# MAC about 20 ms after it registers, so `usb0` becomes `enu1i1`:
+#
+#   [220.443809] cdc_ncm 3-1:1.1 usb0: register 'cdc_ncm' ... 76:b0:67:a0:6f:33
+#   [220.463184] cdc_ncm 3-1:1.1 enu1i1: renamed from usb0
+#
+# catplay_c2a reads that interface's name from configfs
+# (usb_gadget/<g>/functions/iap2_accessory/ifname) and then probes that exact
+# name. The read wins the race and returns `usb0`; the rename lands 20 ms later.
+# ConfiguringNcm survives this because it re-reads the name inside
+# NcmHelper::retry, but the later WaitingForStableMulticast stage uses the name
+# captured on the accessory and keeps it, so is_mdns_v6_stable("usb0") fails
+# forever with ENODEV:
+#
+#   PROBE waiting-for-stable-multicast ncm=usb0 result=Err(Os { code: 19,
+#     kind: Uncategorized, message: "No such device" })
+#
+# MulticastStable and CarPlaySession were therefore never reached: the daemon
+# sat in WaitingForStableMulticast, sent nothing, and the Pi's watchdog tore the
+# link down every ~2 minutes ("DEAD LINK -- silent 46s on both transports").
+# Pinning the name makes the state machine reach CarPlaySession.
+#
+# Matched by OriginalName rather than by MAC: usb0 is the kernel-assigned name,
+# and the NCM MAC is chosen by the peer's gadget and is not stable across
+# re-enumerations.
+[Match]
+OriginalName=usb0
+
+[Link]
+NamePolicy=kernel

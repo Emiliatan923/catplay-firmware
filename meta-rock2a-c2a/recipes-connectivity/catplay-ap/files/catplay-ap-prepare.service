@@ -1,0 +1,17 @@
+[Unit]
+Description=CatPlay wireless CarPlay access point (interface setup)
+DefaultDependencies=no
+After=sys-subsystem-net-devices-wlan0.device
+Wants=sys-subsystem-net-devices-wlan0.device
+Before=catplay-hostapd.service catplay-dnsmasq.service
+Before=network-pre.target
+Wants=network-pre.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/libexec/catplay/catplay-ap-prepare.sh
+ExecStop=/usr/sbin/iw dev ap0 del
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,14 @@
+[Unit]
+Description=CatPlay access point (hostapd on ap0)
+Requires=catplay-ap-prepare.service
+After=catplay-ap-prepare.service
+Before=catplay-dnsmasq.service
+
+[Service]
+Type=simple
+ExecStart=/usr/sbin/hostapd /etc/catplay/hostapd.conf
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

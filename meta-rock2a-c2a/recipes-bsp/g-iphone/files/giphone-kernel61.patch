@@ -1,0 +1,121 @@
+--- a/composite.c
++++ b/composite.c
+@@ -520,6 +520,13 @@
+  */
+ int usb_func_wakeup(struct usb_function *func)
+ {
++#if !IPHONE_HAVE_FUNC_WAKEUP
++    /* Pre-6.6: the gadget has no func_wakeup op and the function cannot be
++     * armed, so this always reports "not supported" -- the same result the
++     * 6.6 code below produces when ops->func_wakeup is NULL. */
++    (void)func;
++    return -EOPNOTSUPP;
++#else
+     struct usb_gadget *gadget = func->config->cdev->gadget;
+     int id;
+ 
+@@ -543,6 +550,7 @@
+     }
+ 
+     return gadget->ops->func_wakeup(gadget, id);
++#endif /* IPHONE_HAVE_FUNC_WAKEUP */
+ }
+ // EXPORT_SYMBOL_GPL(usb_func_wakeup);
+ 
+@@ -982,7 +990,9 @@
+             f->disable(f);
+ 
+         /* Section 9.1.1.6, disable remote wakeup when device is reset */
++#if IPHONE_HAVE_FUNC_WAKEUP
+         f->func_wakeup_armed = false;
++#endif
+ 
+         bitmap_zero(f->endpoints, 32);
+     }
+@@ -2140,8 +2150,10 @@
+                     (w_index & USB_INTRF_FUNC_SUSPEND_RW))
+                     break;
+ 
++#if IPHONE_HAVE_FUNC_WAKEUP
+                 f->func_wakeup_armed = !!(w_index &
+                                           USB_INTRF_FUNC_SUSPEND_RW);
++#endif
+ 
+                 if (w_index & USB_INTRF_FUNC_SUSPEND_LP)
+                 {
+@@ -2168,7 +2180,9 @@
+             }
+             else if (ctrl->bRequest == USB_REQ_CLEAR_FEATURE)
+             {
++#if IPHONE_HAVE_FUNC_WAKEUP
+                 f->func_wakeup_armed = false;
++#endif
+ 
+                 if (f->resume && f->func_suspended)
+                 {
+--- a/iap2_scan.c
++++ b/iap2_scan.c
+@@ -908,7 +908,6 @@
+                           size_t count)
+ {
+     struct iap2_acc_accessory *acc = iap2_acc_probe_accessory();
+-    int ret;
+ 
+     if (IS_ERR(acc)) {
+         pr_info("iap2_acc_probe_accessory failed: %ld\n", PTR_ERR(acc));
+--- a/kver_compat.h
++++ b/kver_compat.h
+@@ -37,3 +37,21 @@
+ #else
+ #include <asm/unaligned.h>
+ #endif
++
++/*
++ * struct usb_gadget_ops gained func_wakeup() and struct usb_function gained
++ * func_wakeup_armed in Linux 6.6, together with USB_INTRF_FUNC_SUSPEND_RW and
++ * usb_func_wakeup(). The Rockchip 6.1 vendor kernel used by the ROCK 2A port
++ * predates all of them, so the function-suspend remote-wakeup path simply does
++ * not exist there.
++ *
++ * On older kernels usb_func_wakeup() always fails, which is exactly what the
++ * 6.6 implementation returns when the UDC has no func_wakeup op, and the
++ * "armed" bookkeeping has nowhere to be stored. Compile that path out rather
++ * than faking a field the kernel does not have.
++ */
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
++#define IPHONE_HAVE_FUNC_WAKEUP 1
++#else
++#define IPHONE_HAVE_FUNC_WAKEUP 0
++#endif
+--- a/Makefile
++++ b/Makefile
+@@ -4,13 +4,29 @@
+ 
+ g_iphone-y := iphone_mod.o iphone_dev.o iphone_class.o f_iphone.o g_iphone_impl.o composite.o 
+ 
++# KDIR may be supplied by an out-of-tree build system (Yocto's module class
++# exports KERNEL_SRC and O). Falling back to the running kernel's build tree
++# keeps the original hand-build workflow working.
++KDIR ?= $(KERNEL_SRC)
++ifeq ($(KDIR),)
+ KDIR := /lib/modules/$(shell uname -r)/build
++endif
+ 
+ PWD := $(shell pwd)
+ 
+ all:
+ 	$(MAKE) -C $(KDIR) M=$(PWD) modules
+ 
++# Yocto's module class drives `modules` and `modules_install` directly, so
++# provide them. `modules` is what `all` already does; `modules_install` needs
++# the same MODLIB the class passes so the .ko files land where the
++# kernel-module-* packaging split expects them.
++modules:
++	$(MAKE) -C $(KDIR) M=$(PWD) modules
++
++modules_install:
++	$(MAKE) -C $(KDIR) M=$(PWD) modules_install
++
+ clean:
+ 	$(MAKE) -C $(KDIR) M=$(PWD) clean
+ 

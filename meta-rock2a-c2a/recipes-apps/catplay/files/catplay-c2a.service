@@ -1,0 +1,32 @@
+[Unit]
+Description=CatPlay CarPlay dongle daemon
+Documentation=https://github.com/catplay-labs/catplay
+
+# Ordering matters and mirrors what was validated on hardware:
+#  - the USB gadget modules must be loaded before the daemon binds the UDC;
+#  - the access point must exist and be addressed, because the daemon binds
+#    AirPlay and advertises Bonjour on the AP interface;
+#  - the Bluetooth adapter must be discoverable, or the iPhone never sees the
+#    dongle and wireless CarPlay cannot start.
+After=catplay-ap-prepare.service catplay-hostapd.service catplay-dnsmasq.service
+After=catplay-bt-discoverable.service bluetooth.service
+Wants=catplay-ap-prepare.service catplay-hostapd.service catplay-dnsmasq.service
+Wants=catplay-bt-discoverable.service
+Requires=bluetooth.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/catplay_c2a --config /etc/catplay/catplay.conf
+
+# The daemon drives USB role switching through sysfs and needs the gadget to be
+# available; it also writes its pairing identity under /var/lib/catplay.
+Restart=always
+RestartSec=2
+
+# Failure diagnosis is much easier with the log going somewhere persistent.
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=catplay
+
+[Install]
+WantedBy=multi-user.target

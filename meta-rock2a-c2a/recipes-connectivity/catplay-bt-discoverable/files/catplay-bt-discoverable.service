@@ -1,0 +1,13 @@
+[Unit]
+Description=CatPlay Bluetooth adapter discoverable/pairable
+After=bluetooth.service
+Requires=bluetooth.service
+Before=catplay-c2a.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/libexec/catplay/catplay-bt-discoverable.sh
+
+[Install]
+WantedBy=multi-user.target

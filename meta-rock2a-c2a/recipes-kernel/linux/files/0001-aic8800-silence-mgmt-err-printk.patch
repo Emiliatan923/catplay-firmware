@@ -1,0 +1,50 @@
+From: CatPlay port <noreply@localhost>
+Subject: [PATCH] aic8800: silence the unfilterable "mgmt err" printk
+
+rwnx_rx_mgmt() drops management frames whose length is implausible and
+announces each one with a bare printk(). Having no KERN_ prefix, that
+logs at the default level, so it cannot be filtered from the console with
+`dmesg -n` and it is not routed through the driver's AICWFDBG macros
+either. With the CatPlay AP up it fires ~6 times per second.
+
+The console here is the Rockchip FIQ-backed ttyFIQ0, which is also the
+only way to reach the board (the image has no other login path and no
+DHCP client on the station interface). Flooding it at that rate makes the
+board unusable over UART, which removes the one diagnostic channel
+available for the USB gadget work this port depends on.
+
+Measured on the ROCK 2A: the line appears only while the AP is running,
+so it correlates exactly with hostapd being up. The ttyFIQ console had
+overflow counters incremented and the board stopped echoing commands.
+
+The frame is still dropped; only the log is gone. The verdict this
+printk reports is itself suspicious -- several frames a second of length
+<= 24 or > 768 should not be normal -- but changing the drop policy at
+the same time as the logging would make both impossible to attribute, so
+this patch deliberately keeps the behaviour identical.
+
+Silenced by CatPlay rather than removed: the check is worth keeping, and
+a future investigation of the frame lengths can reintroduce a ratelimited
+diagnostic.
+
+Upstream-Status: Inappropriate [vendor out-of-tree driver, board-local workaround]
+
+diff --git a/drivers/net/wireless/aic/aic8800_usb/aic8800_fdrv/rwnx_rx.c b/drivers/net/wireless/aic/aic8800_usb/aic8800_fdrv/rwnx_rx.c
+index 0f897c968c4f..16a2ced9d91b 100644
+--- a/drivers/net/wireless/aic/aic8800_usb/aic8800_fdrv/rwnx_rx.c
++++ b/drivers/net/wireless/aic/aic8800_usb/aic8800_fdrv/rwnx_rx.c
+@@ -724,7 +724,13 @@ static void rwnx_rx_mgmt(struct rwnx_hw *rwnx_hw, struct rwnx_vif *rwnx_vif,
+ 
+     if (ieee80211_is_mgmt(mgmt->frame_control) &&
+         (skb->len <= 24 || skb->len > 768)) {
+-        printk("mgmt err\n");
++        /*
++         * Silenced by CatPlay. This is a bare printk() with no KERN_ level,
++         * so it logs at the default level and cannot be filtered with
++         * dmesg -n; with the AP up it fires several times a second and
++         * floods the ttyFIQ serial console until the board is unusable
++         * over UART. The frame is still dropped -- only the log went away.
++         */
+         return;
+     }
+     if (ieee80211_is_beacon(mgmt->frame_control)) {
