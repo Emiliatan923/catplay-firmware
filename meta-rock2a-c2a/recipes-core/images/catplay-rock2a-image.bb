@@ -34,5 +34,9 @@ IMAGE_INSTALL:append = " \
     util-linux-sfdisk \
 "
 
-# Headroom for the BlueZ pairing database plus hostapd/dnsmasq runtime state.
-IMAGE_ROOTFS_EXTRA_SPACE = "131072"
+# Reserve real on-disk room for unbounded per-boot diagnostics. Raw WIC images
+# do not automatically expand this partition to fill a larger SD card, so the
+# old 128 MiB headroom would leave only about 488 MiB in total despite the
+# physical card being much larger. The zero-filled space remains sparse and
+# compresses efficiently in the distributed .wic.zst artifact.
+IMAGE_ROOTFS_EXTRA_SPACE = "4194304"

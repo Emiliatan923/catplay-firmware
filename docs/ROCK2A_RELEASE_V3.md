@@ -27,7 +27,9 @@ The development image also archives diagnostics by boot under
 `boot-NNNNNN-<kernel-boot-id>` and contains `dmesg.log`, `catplay.log`,
 `bluetooth.log`, and `boot-info.txt`. The `current` symlink selects the latest
 boot. These files live on the writable root filesystem rather than Poky's
-volatile `/var/log` tmpfs, so they survive reboot and power loss.
+volatile `/var/log` tmpfs, so they survive reboot and power loss. The ROCK 2A
+image reserves 4 GiB of additional rootfs space because a raw WIC does not
+otherwise expand to consume the rest of a larger SD card.
 
 The Wi-Fi subnet and `catplay1234` AP passphrase are device runtime defaults,
 not host/build-environment data. They remain versioned because changing them
