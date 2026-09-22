@@ -50,6 +50,11 @@ SRC_URI:append = " \
     file://0035-hwrng-ingenic-gate-DTRNG-clock-around-requests.patch \
     file://0036-i2c-jz4780-gate-clock-around-transfers.patch \
     file://0037-dmaengine-jz4780-gate-controller-clock-around-transf.patch \
+    file://0038-dwc2-log-port-connect-enable-overcurrent-interrupts.patch \
+    file://0039-usb-log-host-enumeration-failures-to-dmesg.patch \
+    file://0040-dwc2-kick-the-root-hub-status-poll-on-port-interrupts.patch \
+    file://0041-usb-core-use-1ms-reset-waits-for-fast-enum-ports.patch \
+    file://0042-usb-hub-run-the-hub-workqueue-at-high-priority.patch \
 "
 
 # PV is defined in the base in linux-imx.inc file and uses the LINUX_VERSION definition

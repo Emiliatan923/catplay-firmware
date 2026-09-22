@@ -1,10 +1,15 @@
-Subject: [PATCH] usb: hub: skip OTG root-hub debounce during B-host activation
+Subject: [PATCH] usb: hub: skip OTG root-hub connect debounce
 Upstream-Status: Pending
 
+The OTG peer switches roles at our request over a cable that carried traffic
+immediately before the switch, so there is no mechanical contact bounce to
+wait out.  Cover both hub activation and the normal hub_port_connect() event
+path.  In the latter, re-read port status instead of waiting for 100 ms of
+stability; hub_port_init() still handles a disconnect during reset.
 
 ---
- drivers/usb/core/hub.c | 14 +++++++++++++-
- 1 file changed, 13 insertions(+), 1 deletion(-)
+ drivers/usb/core/hub.c | 38 ++++++++++++++++++++++++++++++++++----
+ 1 file changed, 34 insertions(+), 4 deletions(-)
 
 diff --git a/drivers/usb/core/hub.c b/drivers/usb/core/hub.c
 index 256fe8c86..c28990d28 100644
@@ -28,16 +33,53 @@ index 256fe8c86..c28990d28 100644
  static void hub_activate(struct usb_hub *hub, enum hub_activation_type type)
  {
  	struct usb_device *hdev = hub->hdev;
-@@ -1234,7 +1245,8 @@ static void hub_activate(struct usb_hub *hub, enum hub_activation_type type)
+@@ -1234,7 +1245,11 @@ static void hub_activate(struct usb_hub *hub, enum hub_activation_type type)
  
  		/* Clear status-change flags; we'll debounce later */
  		if (portchange & USB_PORT_STAT_C_CONNECTION) {
 -			need_debounce_delay = true;
-+			if (!hub_is_b_host_otg_port(hdev, port1))
++			if (hub_is_b_host_otg_port(hdev, port1))
++				dev_info(&port_dev->dev,
++					 "OTG fast path: skipping root-hub connection debounce\n");
++			else
 +				need_debounce_delay = true;
  			usb_clear_port_feature(hub->hdev, port1,
  					USB_PORT_FEAT_C_CONNECTION);
  		}
+@@ -5413,16 +5429,31 @@ static void hub_port_connect(struct usb_hub *hub, int port1, u16 portstatus,
+ 		clear_bit(port1, hub->removed_bits);
+ 
+ 	if (portchange & (USB_PORT_STAT_C_CONNECTION |
+ 				USB_PORT_STAT_C_ENABLE)) {
+-		status = hub_port_debounce_be_stable(hub, port1);
++		if (hub_is_b_host_otg_port(hdev, port1)) {
++			u16 unused;
++
++			dev_info(&port_dev->dev,
++				 "OTG fast path: skipping connection debounce\n");
++			usb_clear_port_feature(hdev, port1,
++					       USB_PORT_FEAT_C_CONNECTION);
++			status = usb_hub_port_status(hub, port1, &portstatus,
++						     &unused);
++		} else {
++			dev_info(&port_dev->dev,
++				 "entering connection/enable change debounce flow\n");
++			status = hub_port_debounce_be_stable(hub, port1);
++			if (status >= 0) {
++				portstatus = status;
++				status = 0;
++			}
++		}
+ 		if (status < 0) {
+ 			if (status != -ENODEV &&
+ 				port1 != unreliable_port &&
+ 				printk_ratelimit())
+ 				dev_err(&port_dev->dev, "connect-debounce failed\n");
+ 			portstatus &= ~USB_PORT_STAT_CONNECTION;
+ 			unreliable_port = port1;
+-		} else {
+-			portstatus = status;
+ 		}
+ 	}
 -- 
 2.55.0
-
