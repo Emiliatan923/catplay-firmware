@@ -1,0 +1,17 @@
+[Unit]
+Description=Persist kernel messages for the current boot
+Requires=catplay-log-setup.service
+After=catplay-log-setup.service systemd-journald.service
+Before=bluetooth.service catplay-c2a.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/journalctl --boot=0 --dmesg --follow --no-pager --output=short-monotonic
+StandardOutput=append:/run/catplay-logs/current/dmesg.log
+StandardError=append:/run/catplay-logs/current/dmesg.log
+Restart=on-failure
+RestartSec=1
+
+[Install]
+WantedBy=multi-user.target
+

@@ -1,0 +1,17 @@
+[Unit]
+Description=Persist CatPlay messages for the current boot
+Requires=catplay-log-setup.service
+After=catplay-log-setup.service systemd-journald.service
+Before=catplay-c2a.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/journalctl --boot=0 --unit=catplay-c2a.service --follow --no-pager --output=short-monotonic
+StandardOutput=append:/run/catplay-logs/current/catplay.log
+StandardError=append:/run/catplay-logs/current/catplay.log
+Restart=on-failure
+RestartSec=1
+
+[Install]
+WantedBy=multi-user.target
+

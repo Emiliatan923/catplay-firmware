@@ -13,6 +13,9 @@ After=catplay-bt-discoverable.service bluetooth.service
 Wants=catplay-ap-prepare.service catplay-hostapd.service catplay-dnsmasq.service
 Wants=catplay-bt-discoverable.service
 Requires=bluetooth.service
+Requires=catplay-log-setup.service
+Wants=catplay-log-catplay.service catplay-log-dmesg.service
+After=catplay-log-setup.service
 
 [Service]
 Type=simple
@@ -23,7 +26,8 @@ ExecStart=/usr/bin/catplay_c2a --config /etc/catplay/catplay.conf
 Restart=always
 RestartSec=2
 
-# Failure diagnosis is much easier with the log going somewhere persistent.
+# Journald remains useful for live inspection. catplay-log-catplay.service also
+# copies this unit's complete stream into a separate persistent file per boot.
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=catplay

@@ -10,6 +10,11 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/MIT;md5=0835ade698e0bcf8506ecda
 # This image adds the CatPlay dongle payload on top of that BSP.
 require recipes-core/images/core-image-minimal.bb
 
+# Match the other CatPlay firmware targets: Dropbear listens on the device's
+# LAN addresses and root logs in with an empty password. Host keys are generated
+# on the device; no user/client key or build-machine identity is embedded.
+IMAGE_FEATURES += "ssh-server-dropbear empty-root-password allow-empty-password allow-root-login"
+
 IMAGE_INSTALL:append = " \
     kernel-modules \
     aic8800-usb-modprobe \
@@ -20,6 +25,7 @@ IMAGE_INSTALL:append = " \
     catplay-bt-discoverable \
     catplay-ap0-link \
     catplay-ncm-link \
+    catplay-persistent-logs \
     bluez5 \
     iw \
     hostapd \

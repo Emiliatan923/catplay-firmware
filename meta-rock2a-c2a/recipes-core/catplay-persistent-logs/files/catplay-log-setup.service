@@ -1,0 +1,12 @@
+[Unit]
+Description=Create the persistent log directory for this boot
+After=local-fs.target systemd-remount-fs.service
+Before=bluetooth.service catplay-c2a.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/catplay-log-setup
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
