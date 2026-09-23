@@ -1,6 +1,8 @@
 Subject: [PATCH] dwc2: actually communicate requested usb-role-switch to the PHY
 Upstream-Status: Pending
 
+Soft-disconnect the gadget before moving from device to host mode, so the
+peripheral pull-up is disabled before the PHY and ID state change.
 
 diff --git a/drivers/usb/dwc2/drd.c b/drivers/usb/dwc2/drd.c
 index 1ad8fa3f862a..24bf12dd9cf8 100644
@@ -36,7 +38,7 @@ index 1ad8fa3f862a..24bf12dd9cf8 100644
  
  	if (role == USB_ROLE_NONE) {
  		/* default operation mode when usb role is USB_ROLE_NONE */
-@@ -127,6 +141,13 @@ static int dwc2_drd_role_sw_set(struct usb_role_switch *sw, enum usb_role role)
+@@ -127,6 +141,17 @@ static int dwc2_drd_role_sw_set(struct usb_role_switch *sw, enum usb_role role)
  			role = USB_ROLE_DEVICE;
  	}
  
@@ -44,6 +46,10 @@ index 1ad8fa3f862a..24bf12dd9cf8 100644
 +		 role, phy_mode);
 +
 +	spin_lock_irqsave(&hsotg->lock, flags);
++
++	/* Drop the peripheral pull-up before switching the PHY or ID state. */
++	if (role == USB_ROLE_HOST && dwc2_is_device_mode(hsotg))
++		dwc2_hsotg_core_disconnect(hsotg);
 +
 +	phy_set_mode(hsotg->phy, phy_mode);
 +

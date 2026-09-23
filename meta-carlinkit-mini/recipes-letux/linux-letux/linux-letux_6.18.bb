@@ -44,7 +44,6 @@ SRC_URI:append = " \
     file://0029-jz4740_mmc-reduce-poll-irq-timeout-budget.patch \
     file://0030-dwc2-drop-dwc2_hcd_start-50ms-delay.patch \
     file://0031-usb-core-set-USB_PORT_QUIRK_OLD_SCHEME-and-USB_PORT_QUIRK_FAST_ENUM-quirks-on-dwc2-root-hub.patch \
-    file://0032-usb-hub-skip-OTG-root-hub-debounce-during-B-host-activation.patch \
     file://0033-clk-ingenic-x1600-couple-cpu-and-l2-dividers.patch \
     file://0034-clk-ingenic-x1600-fix-SADC-gate-bit.patch \
     file://0035-hwrng-ingenic-gate-DTRNG-clock-around-requests.patch \
