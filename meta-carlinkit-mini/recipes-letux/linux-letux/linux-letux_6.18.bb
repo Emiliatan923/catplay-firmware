@@ -44,12 +44,16 @@ SRC_URI:append = " \
     file://0029-jz4740_mmc-reduce-poll-irq-timeout-budget.patch \
     file://0030-dwc2-drop-dwc2_hcd_start-50ms-delay.patch \
     file://0031-usb-core-set-USB_PORT_QUIRK_OLD_SCHEME-and-USB_PORT_QUIRK_FAST_ENUM-quirks-on-dwc2-root-hub.patch \
-    file://0032-usb-hub-skip-OTG-root-hub-debounce-during-B-host-activation.patch \
     file://0033-clk-ingenic-x1600-couple-cpu-and-l2-dividers.patch \
     file://0034-clk-ingenic-x1600-fix-SADC-gate-bit.patch \
     file://0035-hwrng-ingenic-gate-DTRNG-clock-around-requests.patch \
     file://0036-i2c-jz4780-gate-clock-around-transfers.patch \
     file://0037-dmaengine-jz4780-gate-controller-clock-around-transf.patch \
+    file://0038-dwc2-log-port-connect-enable-overcurrent-interrupts.patch \
+    file://0039-usb-log-host-enumeration-failures-to-dmesg.patch \
+    file://0040-dwc2-kick-the-root-hub-status-poll-on-port-interrupts.patch \
+    file://0041-usb-core-use-1ms-reset-waits-for-fast-enum-ports.patch \
+    file://0042-usb-hub-run-the-hub-workqueue-at-high-priority.patch \
 "
 
 # PV is defined in the base in linux-imx.inc file and uses the LINUX_VERSION definition

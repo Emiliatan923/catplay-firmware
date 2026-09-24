@@ -3,8 +3,38 @@ Upstream-Status: Pending
 
 
 ---
+ drivers/usb/core/hub.c  |  9 +++++++--
  drivers/usb/core/port.c | 12 ++++++++++++
- 1 file changed, 12 insertions(+)
+ 2 files changed, 19 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/usb/core/hub.c b/drivers/usb/core/hub.c
+index 256fe8c86..26a57f280 100644
+--- a/drivers/usb/core/hub.c
++++ b/drivers/usb/core/hub.c
+@@ -2922,6 +2922,9 @@ static bool use_new_scheme(struct usb_device *udev, int retry,
+ 	 */
+ 	if (use_both_schemes && retry >= (PORT_INIT_TRIES + 1) / 2)
+ 		return old_scheme_first_port;	/* Second half */
++	if (port_dev->quirks & USB_PORT_QUIRK_OLD_SCHEME)
++		dev_info(&port_dev->dev, "using old enumeration scheme fast path\n");
++
+ 	return !old_scheme_first_port;		/* First half or all */
+ }
+ 
+@@ -3151,9 +3154,11 @@ static int hub_port_reset(struct usb_hub *hub, int port1,
+ 
+ done:
+ 	if (status == 0) {
+-		if (port_dev->quirks & USB_PORT_QUIRK_FAST_ENUM)
++		if (port_dev->quirks & USB_PORT_QUIRK_FAST_ENUM) {
++			dev_info(&port_dev->dev,
++				 "fast enumeration: using 10-12ms reset recovery\n");
+ 			usleep_range(10000, 12000);
+-		else {
++		} else {
+ 			/* TRSTRCY = 10 ms; plus some extra */
+ 			reset_recovery_time = 10 + 40;
+ 
 
 diff --git a/drivers/usb/core/port.c b/drivers/usb/core/port.c
 index a47df5d32..6585f3f36 100644
@@ -45,4 +75,3 @@ index a47df5d32..6585f3f36 100644
  	set_bit(port1, hub->power_bits);
 -- 
 2.55.0
-
